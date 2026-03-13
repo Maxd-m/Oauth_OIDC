@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -16,13 +17,14 @@ class AuthController extends Controller
         return Socialite::driver('discord')->redirect();
     }
 
-    public function handleDiscordCallback()
+    public function handleDiscordCallback(Request $request)
     {
-        // Aquí recibes el Access Token y los datos del perfil (OIDC/OAuth)
-        $discordUser = Socialite::driver('discord')->user();
+        // Obtenemos los datos del usuario desde Discord
+        $user = Socialite::driver('discord')->user();
         
-        // Lógica para registrar o iniciar sesión al usuario en tu base de datos
-        // $this->loginOrCreateUser($discordUser, 'discord');
+        // Guardamos los datos en la sesión para mostrarlos en la vista
+        $request->session()->put('oauth_user', $user);
+        $request->session()->put('oauth_provider', 'Discord');
         
         return redirect('/dashboard');
     }
@@ -37,12 +39,21 @@ class AuthController extends Controller
             ->redirect();
     }
 
-    public function handleSpotifyCallback()
+    public function handleSpotifyCallback(Request $request)
     {
-        $spotifyUser = Socialite::driver('spotify')->user();
+        // Obtenemos los datos del usuario desde Spotify
+        $user = Socialite::driver('spotify')->user();
         
-        // $this->loginOrCreateUser($spotifyUser, 'spotify');
+        $request->session()->put('oauth_user', $user);
+        $request->session()->put('oauth_provider', 'Spotify');
         
         return redirect('/dashboard');
+    }
+
+    // Agregamos un método para cerrar sesión
+    public function logout(Request $request)
+    {
+        $request->session()->forget(['oauth_user', 'oauth_provider']);
+        return redirect('/login');
     }
 }
